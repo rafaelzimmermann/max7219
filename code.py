@@ -10,7 +10,50 @@ from libs import matrices
 
 
 class RequestError(Exception):
-    pass
+   pass
+
+class Time:
+    def __init__(self, hour, minute, second):
+        self._hour = int(hour)
+        self._minute = int(minute)
+        self._second = int(second)
+
+    def to_cest(self):
+        cest_h = self._hour + 2
+        if cest_h > 23:
+            cest_h = cest_h - 24
+        return Time(cest_h, self._minute, self._second)
+
+    @staticmethod
+    def _zero_padded(value):
+        return str(value + 100)[-2:]
+
+    @property
+    def str_h(self):
+        return self._zero_padded(self._hour)
+
+    @property
+    def str_m(self):
+        return self._zero_padded(self._minute)
+
+    @property
+    def str_s(self):
+        return self._zero_padded(self._second)
+    
+    @property
+    def hour(self):
+        return self._hour
+    
+    @property
+    def minute(self):
+        return self._minute
+
+    @property
+    def second(self):
+        return self._second
+
+    def __str__(self):
+        return f"{self.str_h}:{self.str_m}"
 
 
 class PyClock:
@@ -26,23 +69,27 @@ class PyClock:
         while True:
             self.update_clock()
 
-    def to_cest(self, h):
-        cest_h = int(h) + 2
-        if cest_h > 23:
-            cest_h = cest_h - 24
-        return str(cest_h)
-
     def update_clock(self):
         try:
-            h, m, s = self.now().split(' ')[2].split(':')
-            h = self.to_cest(h)
-            self.print(f"{h}:{m}")
-            time.sleep(60 - int(s))
-        except RequestError:
+            t = self.now()
+            self.matrix.fill(0)
+            for i, c in enumerate(str(t).replace(":", "")):
+                if i > 1:
+                    self.matrix.text(c, 2 + (i* 8), 1)
+                else:
+                    self.matrix.text(c, 1 + (i* 8), 1)
+            self.matrix.pixel(15, 3, 1)
+            self.matrix.pixel(16, 3, 1)
+            self.matrix.pixel(15, 5, 1)
+            self.matrix.pixel(16, 5, 1)
+            self.matrix.show()
+            time.sleep(60 - t.second)
+        except RequestError as e:
+            print(e)
             self.print("Error")
             time.sleep(30)
 
-    def print(text, x=1, y=1):
+    def print(self, text, x=1, y=1):
         self.matrix.fill(0)
         self.matrix.text(text, x, y)
         self.matrix.show()
@@ -56,14 +103,16 @@ class PyClock:
         self.fill_and_show(True)
         self.fill_and_show(False)
 
-    def now(self):
+    def now(self) -> Time:
         try:
             s = self.pool.socket()
             s.connect(("time.nist.gov", 13))
             result = bytearray(51)
             s.recv_into(result)
+            parts = result.decode().split(' ')[2].split(':')
+            return Time(hour=parts[0], minute=parts[1], second=parts[2]).to_cest()
         except Exception as e:
-            raise RequestError() from e
+            raise RequestError(e) from e
         finally:
             s.close()
         return result.decode()
