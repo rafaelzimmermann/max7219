@@ -8,6 +8,9 @@ import socketpool
 from secrets import secrets
 from libs import matrices
 
+class RequestError(Exception):
+    pass
+
 
 class PyClock:
     def __init__(self):
@@ -36,8 +39,9 @@ class PyClock:
             self.matrix.text(f"{h}:{m}", 1, 1)
             self.matrix.show()
             time.sleep(60 - int(s))
-        except Exception as e:
-            print(e)
+        except RequestError:
+            self.matrix.text("Error", 1, 1)
+            self.matrix.show()
             time.sleep(30)
 
     def fill_and_show(self, value):
@@ -50,12 +54,15 @@ class PyClock:
         self.fill_and_show(False)
 
     def now(self):
-        address = ("time.nist.gov", 13)
-        s = self.pool.socket()
-        s.connect(address)
-        result = bytearray(51)
-        s.recv_into(result)
-        s.close()
+        try:
+            s = self.pool.socket()
+            s.connect(("time.nist.gov", 13))
+            result = bytearray(51)
+            s.recv_into(result)
+        except Exception as e:
+            raise RequestError() from e
+        finally:
+            s.close()
         return result.decode()
 
 
