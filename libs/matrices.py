@@ -98,6 +98,7 @@ class CustomMatrix(max7219.ChainableMAX7219):
         self.framebuf.rotation = rotation
         self.framebuf.fill_rect = self._fill_rect
         self._font = None
+        self.brightness(2)
 
     def _calculate_y_coordinate_offsets(self) -> None:
         y_chunks = []
