@@ -8,6 +8,7 @@ import socketpool
 from secrets import secrets
 from libs import matrices
 
+
 class RequestError(Exception):
     pass
 
@@ -35,14 +36,16 @@ class PyClock:
         try:
             h, m, s = self.now().split(' ')[2].split(':')
             h = self.to_cest(h)
-            self.matrix.fill(0)
-            self.matrix.text(f"{h}:{m}", 1, 1)
-            self.matrix.show()
+            self.print(f"{h}:{m}")
             time.sleep(60 - int(s))
         except RequestError:
-            self.matrix.text("Error", 1, 1)
-            self.matrix.show()
+            self.print("Error")
             time.sleep(30)
+
+    def print(text, x=1, y=1):
+        self.matrix.fill(0)
+        self.matrix.text(text, x, y)
+        self.matrix.show()
 
     def fill_and_show(self, value):
         self.matrix.fill(value)
