@@ -7,7 +7,7 @@ mount_pico
 
 echo "Deploy started"
 
-rm -f "${MOUNT_POINT}/libs"
+rm -rf "${MOUNT_POINT}/libs"
 cp -r libs "${MOUNT_POINT}"
 cp *.py "${MOUNT_POINT}"
 cp *.bin "${MOUNT_POINT}"
