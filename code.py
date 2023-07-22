@@ -74,28 +74,35 @@ class PyClock:
         self.blink()
         while True:
             if self.current_time.minute % 10 == 0:
-                self.current_time = self.now()
+                try:
+                    self.current_time = self.now()
+                except RequestError as e:
+                    print(e)
+                    self.print("Error")
+                    time.sleep(1)
+                    continue
             self.update_clock()
-            time.sleep(60 - self.current_time.second)
+            self.blink_semicolon(60 - self.current_time.second)
             self.current_time.increment(1)
+
+    def blink_semicolon(self, secs):
+        for i in range(0, secs):
+            self.update_clock(semicolon_on = i % 2)
+            time.sleep(1)
             
-    def update_clock(self):
-        try:
-            self.matrix.fill(0)
-            for i, c in enumerate(str(self.current_time).replace(":", "")):
-                if i > 1:
-                    self.matrix.text(c, 2 + (i* 8), 1)
-                else:
-                    self.matrix.text(c, 1 + (i* 8), 1)
+    def update_clock(self, semicolon_on: bool = True):
+        self.matrix.fill(0)
+        for i, c in enumerate(str(self.current_time).replace(":", "")):
+            if i > 1:
+                self.matrix.text(c, 2 + (i* 8), 1)
+            else:
+                self.matrix.text(c, 1 + (i* 8), 1)
+        if semicolon_on:
             self.matrix.pixel(15, 3, 1)
             self.matrix.pixel(16, 3, 1)
             self.matrix.pixel(15, 5, 1)
             self.matrix.pixel(16, 5, 1)
-            self.matrix.show()
-        except RequestError as e:
-            print(e)
-            self.print("Error")
-            time.sleep(30)
+        self.matrix.show()
 
     def print(self, text, x=1, y=1):
         self.matrix.fill(0)
