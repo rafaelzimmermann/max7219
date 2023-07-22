@@ -24,6 +24,11 @@ class Time:
             cest_h = cest_h - 24
         return Time(cest_h, self._minute, self._second)
 
+    def increment(self, minutes: int):
+        self._minute += minutes % 60
+        self._hour += int(minutes / 60)
+        self._second = 0
+
     @staticmethod
     def _zero_padded(value):
         return str(value + 100)[-2:]
@@ -63,17 +68,21 @@ class PyClock:
         self.matrix = matrices.CustomMatrix(width=32, height=8, spi=spi, cs=cs)
         wifi.radio.connect(secrets.ssid, secrets.password)
         self.pool = socketpool.SocketPool(wifi.radio)
+        self.current_time = self.now()
 
     def run(self):
         self.blink()
         while True:
+            if self.current_time.minute % 10 == 0:
+                self.current_time = self.now()
             self.update_clock()
-
+            time.sleep(60 - self.current_time.second)
+            self.current_time.increment(1)
+            
     def update_clock(self):
         try:
-            t = self.now()
             self.matrix.fill(0)
-            for i, c in enumerate(str(t).replace(":", "")):
+            for i, c in enumerate(str(self.current_time).replace(":", "")):
                 if i > 1:
                     self.matrix.text(c, 2 + (i* 8), 1)
                 else:
@@ -83,7 +92,6 @@ class PyClock:
             self.matrix.pixel(15, 5, 1)
             self.matrix.pixel(16, 5, 1)
             self.matrix.show()
-            time.sleep(60 - t.second)
         except RequestError as e:
             print(e)
             self.print("Error")
